@@ -17,6 +17,13 @@ from . import pretrained_networks as pn
 # from PerceptualSimilarity.util import util
 from util import util
 
+
+def _preprocess(image, shift, scale):
+    weight = 1 / scale.view(3, 1, 1, 1)
+    bias = -shift / scale
+    return nn.functional.conv2d(image, weight, bias=bias, groups=3)
+
+
 # Off-the-shelf deep network
 class PNet(nn.Module):
     '''Pre-trained network with all channels equally weighted by default'''
@@ -48,8 +55,8 @@ class PNet(nn.Module):
             self.scale = self.scale.cuda()
 
     def forward(self, in0, in1, retPerLayer=False):
-        in0_sc = (in0 - self.shift.expand_as(in0))/self.scale.expand_as(in0)
-        in1_sc = (in1 - self.shift.expand_as(in0))/self.scale.expand_as(in0)
+        in0_sc = _preprocess(in0, self.shift.view(3), self.scale.view(3))
+        in1_sc = _preprocess(in1, self.shift.view(3), self.scale.view(3))
 
         outs0 = self.net.forward(in0_sc)
         outs1 = self.net.forward(in1_sc)
@@ -129,8 +136,8 @@ class PNetLin(nn.Module):
                 self.lin6.cuda()
 
     def forward(self, in0, in1):
-        in0_sc = (in0 - self.shift.expand_as(in0))/self.scale.expand_as(in0)
-        in1_sc = (in1 - self.shift.expand_as(in0))/self.scale.expand_as(in0)
+        in0_sc = _preprocess(in0, self.shift.view(3), self.scale.view(3))
+        in1_sc = _preprocess(in1, self.shift.view(3), self.scale.view(3))
 
         if(self.version=='0.0'):
             # v0.0 - original release had a bug, where input was not scaled

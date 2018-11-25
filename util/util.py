@@ -72,16 +72,10 @@ def cos_sim_blob(in0,in1):
 def normalize_tensor(in_feat,eps=1e-10):
     # norm_factor = torch.sqrt(torch.sum(in_feat**2,dim=1)).view(in_feat.size()[0],1,in_feat.size()[2],in_feat.size()[3]).repeat(1,in_feat.size()[1],1,1)
     norm_factor = torch.sqrt(torch.sum(in_feat**2,dim=1)).view(in_feat.size()[0],1,in_feat.size()[2],in_feat.size()[3])
-    return in_feat/(norm_factor.expand_as(in_feat)+eps)
+    return in_feat/(norm_factor+eps)
 
 def cos_sim(in0,in1):
-    in0_norm = normalize_tensor(in0)
-    in1_norm = normalize_tensor(in1)
-    N = in0.size()[0]
-    X = in0.size()[2]
-    Y = in0.size()[3]
-
-    return torch.mean(torch.mean(torch.sum(in0_norm*in1_norm,dim=1).view(N,1,X,Y),dim=2).view(N,1,1,Y),dim=3).view(N)
+    return torch.mean(torch.nn.functional.cosine_similarity(in0, in1, eps=1e-10))
 
 # Converts a Tensor into a Numpy array
 # |imtype|: the desired type of the conve
